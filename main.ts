@@ -27,7 +27,7 @@ try {
     execSync('ip addr add 10.8.0.1/24 dev vpnTun', { stdio: 'pipe' })
 } catch (e: any) {
     const msg: string = e.stderr?.toString() ?? e.message ?? ''
-    if (!msg.includes('File exists')) throw e
+    if (!msg.includes('File exists') && !msg.includes('already assigned')) throw e
     console.log('TUN address already assigned — continuing.')
 }
 execSync('ip link set vpnTun up')
