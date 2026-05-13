@@ -1,0 +1,21 @@
+# Node.js / Bun
+node_modules/
+bun.lock
+*.log
+
+# Compiled Shared Objects
+*.so
+*.o
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# IDEs
+.vscode/
+.idea/
