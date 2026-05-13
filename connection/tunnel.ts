@@ -37,6 +37,7 @@ export class Tunnel{
         private async sendToPeers(packet: Buffer): Promise<void> {
         for (const peer of this.config.peers) {
             const enc = await encrypt(packet, peer.publicKey)
+            console.log(`Outbound: ${packet.length} bytes -> ${peer.ip}:${peer.port}`)
             this.socket.send(enc, peer.port, peer.ip)
         }
     }
@@ -45,11 +46,12 @@ export class Tunnel{
         for (const peer of this.config.peers) {
             const plain = await decrypt(msg, peer.publicKey)
             if (plain) {
+                console.log(`Inbound: ${plain.length} bytes from ${peer.ip}`)
                 tunWrite(this.fd, plain)
                 return
             }
         }
-        console.warn('Dropped packet — no matching peer key')
+        console.warn('Dropped packet — no matching peer key or decryption failed')
     }
 
     stop(): void {

@@ -22,16 +22,6 @@ if (![16, 24, 32].includes(rawKeyBytes.length)) {
     process.exit(1)
 }
 
-// Assign the TUN address — ignore "File exists" so re-runs don't crash.
-try {
-    execSync('ip addr add 10.8.0.1/24 dev vpnTun', { stdio: 'pipe' })
-} catch (e: any) {
-    const msg: string = e.stderr?.toString() ?? e.message ?? ''
-    if (!msg.includes('File exists') && !msg.includes('already assigned')) throw e
-    console.log('TUN address already assigned — continuing.')
-}
-execSync('ip link set vpnTun up')
-
 const key = await importKey(rawKeyBytes)
 
 const config: TunnelConfig = {
@@ -46,4 +36,15 @@ const config: TunnelConfig = {
 }
 
 const tunnel = new Tunnel(config)
+
+// Assign the TUN address AFTER the tunnel creates the device.
+try {
+    execSync('ip addr add 10.8.0.2/24 dev vpnTun', { stdio: 'pipe' })
+} catch (e: any) {
+    const msg: string = e.stderr?.toString() ?? e.message ?? ''
+    if (!msg.includes('File exists') && !msg.includes('already assigned')) throw e
+    console.log('TUN address already assigned — continuing.')
+}
+execSync('ip link set vpnTun up')
+
 await tunnel.start()
