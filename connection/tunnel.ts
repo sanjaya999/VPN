@@ -30,8 +30,10 @@ export class Tunnel{
             if (n > 0) {
                 const packet = buf.subarray(0, n)
                 await this.sendToPeers(packet)
+            } else {
+                // No data available yet, yield to the event loop
+                await Bun.sleep(1)
             }
-            await Bun.sleep(0)
         }
     }
         private async sendToPeers(packet: Buffer): Promise<void> {

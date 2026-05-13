@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 int tun_open(const char *ifname) {
-  int fd = open("/dev/net/tun", O_RDWR);
+  int fd = open("/dev/net/tun", O_RDWR | 04000); // 04000 is O_NONBLOCK on Linux
   if (fd < 0) {
     return -1;
   }
