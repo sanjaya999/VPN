@@ -17,7 +17,7 @@ export class Tunnel{
     async start():Promise<void>{
         this.running = true
         this.socket.bind(this.config.listenPort)
-        this.socket.on('message', (msg: Buffer)=> this.handleInbound(msg))
+        this.socket.on('message', (msg: Buffer, rinfo: dgram.RemoteInfo)=> this.handleInbound(msg, rinfo))
         console.log(`Tunnel listening on :${this.config.listenPort}`)
         await this.readLoop();
 
@@ -32,28 +32,31 @@ export class Tunnel{
                 await this.sendToPeers(packet)
             } else {
                 // No data available yet, yield to the event loop
-                await Bun.sleep(1)
+                await Bun.sleep(0)
             }
         }
     }
         private async sendToPeers(packet: Buffer): Promise<void> {
         for (const peer of this.config.peers) {
             const enc = await encrypt(packet, peer.publicKey)
-            console.log(`Outbound: ${packet.length} bytes -> ${peer.ip}:${peer.port}`)
             this.socket.send(enc, peer.port, peer.ip)
         }
     }
 
-    private async handleInbound(msg: Buffer): Promise<void> {
+    private async handleInbound(msg: Buffer, rinfo: dgram.RemoteInfo): Promise<void> {
         for (const peer of this.config.peers) {
             const plain = await decrypt(msg, peer.publicKey)
             if (plain) {
-                console.log(`Inbound: ${plain.length} bytes from ${peer.ip}`)
+                // Auto-learn/update peer address if it changed
+                if (peer.ip !== rinfo.address || peer.port !== rinfo.port) {
+                    console.log(`Peer address updated: ${rinfo.address}:${rinfo.port}`)
+                    peer.ip = rinfo.address
+                    peer.port = rinfo.port
+                }
                 tunWrite(this.fd, plain)
                 return
             }
         }
-        console.warn('Dropped packet — no matching peer key or decryption failed')
     }
 
     stop(): void {
